@@ -1,4 +1,4 @@
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+// import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
 import 'package:myapp/core/models/call_state.dart';
 import 'package:myapp/core/services/call_manager.dart';
@@ -11,40 +11,41 @@ class CallStateNotifier with ChangeNotifier {
 
   CallStateNotifier({CallManager? callManager})
     : _callManager = callManager ?? CallManager() {
-    _callManager.addEventHandler(
-      RtcEngineEventHandler(
-        onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          _callState = _callState.copyWith(
-            isInCall: true,
-            isConnecting: false,
-            channelName: connection.channelId,
-            localUid: connection.localUid,
-          );
-          notifyListeners();
-        },
-        onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          _callState = _callState.copyWith(isRemoteUserJoined: true);
-          notifyListeners();
-        },
-        onUserOffline:
-            (
-              RtcConnection connection,
-              int remoteUid,
-              UserOfflineReasonType reason,
-            ) {
-              _callState = _callState.copyWith(isRemoteUserJoined: false);
-              notifyListeners();
-            },
-        onLeaveChannel: (RtcConnection connection, RtcStats stats) {
-          _callState = const CallState();
-          notifyListeners();
-        },
-        onError: (ErrorCodeType err, String msg) {
-          _callState = _callState.copyWith(errorMessage: msg);
-          notifyListeners();
-        },
-      ),
-    );
+    _callManager.addEventHandler(null);
+    // _callManager.addEventHandler(
+    //   RtcEngineEventHandler(
+    //     onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
+    //       _callState = _callState.copyWith(
+    //         isInCall: true,
+    //         isConnecting: false,
+    //         channelName: connection.channelId,
+    //         localUid: connection.localUid,
+    //       );
+    //       notifyListeners();
+    //     },
+    //     onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
+    //       _callState = _callState.copyWith(isRemoteUserJoined: true);
+    //       notifyListeners();
+    //     },
+    //     onUserOffline:
+    //         (
+    //           RtcConnection connection,
+    //           int remoteUid,
+    //           UserOfflineReasonType reason,
+    //         ) {
+    //           _callState = _callState.copyWith(isRemoteUserJoined: false);
+    //           notifyListeners();
+    //         },
+    //     onLeaveChannel: (RtcConnection connection, RtcStats stats) {
+    //       _callState = const CallState();
+    //       notifyListeners();
+    //     },
+    //     onError: (ErrorCodeType err, String msg) {
+    //       _callState = _callState.copyWith(errorMessage: msg);
+    //       notifyListeners();
+    //     },
+    //   ),
+    // );
   }
 
   Future<void> joinChannel(String channelName) async {
