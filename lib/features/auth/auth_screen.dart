@@ -12,12 +12,9 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool _isLogin = true;
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
-  bool _passwordVisible = false;
 
   Future<void> _handleAuthAction() async {
     if (_formKey.currentState!.validate()) {
@@ -26,21 +23,13 @@ class _AuthScreenState extends State<AuthScreen> {
       });
 
       try {
-        if (_isLogin) {
-          await Supabase.instance.client.auth.signInWithPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text.trim(),
-          );
-          if (mounted) context.go('/home');
-        } else {
-          final email = _emailController.text.trim();
-          await Supabase.instance.client.auth.signUp(
-            email: email,
-            password: _passwordController.text.trim(),
-          );
-          if (mounted) {
-            context.push('/otp', extra: email);
-          }
+        final email = _emailController.text.trim();
+        await Supabase.instance.client.auth.signInWithOtp(
+          email: email,
+          emailRedirectTo: 'io.supabase.flutterquickstart://login-callback/',
+        );
+        if (mounted) {
+          context.push('/otp', extra: email);
         }
       } on AuthException catch (e) {
         if (mounted) {
@@ -100,7 +89,6 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -136,7 +124,7 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 32),
                   Text(
-                    'Welcome Back',
+                    'Get Started',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.bold,
@@ -144,40 +132,21 @@ class _AuthScreenState extends State<AuthScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sign in to continue your anonymous chats.',
+                    'Enter your email to receive a one-time code.',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 32),
-                  Container(
-                    height: 48,
-                    padding: const EdgeInsets.all(4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.surfaceContainerHighest
-                          .withAlpha(128),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildAuthToggle('Login', true, theme),
-                        _buildAuthToggle('Register', false, theme),
-                      ],
-                    ),
-                  ),
                   const SizedBox(height: 24),
                   _buildTextField(
                     controller: _emailController,
-                    label: 'Email or Username',
-                    placeholder: 'Enter your email or username',
+                    label: 'Email',
+                    placeholder: 'Enter your email',
                     theme: theme,
                   ),
                   const SizedBox(height: 24),
-                  _buildPasswordField(theme),
-                  const SizedBox(height: 24),
-                  if (!_isLogin) _buildPasswordRequirements(theme),
-                  if (!_isLogin) const SizedBox(height: 24),
                   _buildPrimaryButton(theme),
                   const SizedBox(height: 16),
                   _buildDivider(theme),
@@ -186,40 +155,6 @@ class _AuthScreenState extends State<AuthScreen> {
                   const SizedBox(height: 24),
                   _buildLegalText(theme),
                 ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAuthToggle(String text, bool forLogin, ThemeData theme) {
-    final isSelected = _isLogin == forLogin;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _isLogin = forLogin),
-        child: Container(
-          decoration: BoxDecoration(
-            color: isSelected ? theme.colorScheme.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(13),
-                      blurRadius: 2,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Center(
-            child: Text(
-              text,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: isSelected
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ),
@@ -251,118 +186,14 @@ class _AuthScreenState extends State<AuthScreen> {
             if (value == null || value.trim().isEmpty) {
               return 'This field cannot be empty.';
             }
-            return null;
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPasswordField(ThemeData theme) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Password',
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            if (_isLogin)
-              GestureDetector(
-                onTap: () {
-                  /* Forgot password */
-                },
-                child: Text(
-                  'Forgot Password?',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        TextFormField(
-          controller: _passwordController,
-          obscureText: !_passwordVisible,
-          decoration: InputDecoration(
-            hintText: 'Enter your password',
-            suffixIcon: IconButton(
-              icon: Icon(
-                _passwordVisible
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              onPressed: () =>
-                  setState(() => _passwordVisible = !_passwordVisible),
-            ),
-          ),
-          validator: (value) {
-            if (value == null || value.isEmpty) {
-              return 'Please enter your password.';
-            }
-            if (!_isLogin && value.length < 8) {
-              return 'Password must be at least 8 characters.';
+            // Basic email validation
+            if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                return 'Please enter a valid email address.';
             }
             return null;
           },
         ),
       ],
-    );
-  }
-
-  Widget _buildPasswordRequirements(ThemeData theme) {
-    final hasEightChars = _passwordController.text.length >= 8;
-    final hasNumber = _passwordController.text.contains(RegExp(r'[0-9]'));
-    final hasSpecial = _passwordController.text.contains(
-      RegExp(r'[!@#\$%^&*(),.?":{}|<>]'),
-    );
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Password must contain:',
-          style: theme.textTheme.bodySmall?.copyWith(
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 8),
-        _buildRequirementRow('At least 8 characters', hasEightChars, theme),
-        _buildRequirementRow('At least one number (0-9)', hasNumber, theme),
-        _buildRequirementRow(
-          'At least one special character (!@#\$)',
-          hasSpecial,
-          theme,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildRequirementRow(String text, bool met, ThemeData theme) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
-      child: Row(
-        children: [
-          Icon(
-            met ? Icons.check_circle : Icons.radio_button_unchecked,
-            color: met ? Colors.green : theme.colorScheme.onSurfaceVariant,
-            size: 20,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            text,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -375,7 +206,7 @@ class _AuthScreenState extends State<AuthScreen> {
               width: 24,
               child: CircularProgressIndicator(strokeWidth: 3),
             )
-          : Text(_isLogin ? 'Log In' : 'Register'),
+          : const Text('Send Code'),
     );
   }
 
